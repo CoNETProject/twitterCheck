@@ -1,4 +1,4 @@
-import puppeteer, {ElementHandle, Browser, Page} from 'puppeteer'
+import puppeteer, {ElementHandle, Browser, Page, HTTPResponse} from 'puppeteer'
 import { logger } from './logger'
 import Colors from 'colors/safe'
 import {readFileSync} from 'node:fs'
@@ -239,12 +239,11 @@ const searchAccount = async () => {
 
 	const task = postPool.shift()
 	if (!task) {
-		return
+		return logger(Colors.gray(`postPool has empty!`))
 	}
 	
 	pageLocked = true
-
-	page.on ('response', async response => {
+	const listen = async (response: HTTPResponse) => {
 		const url = response.url()
 		const test = /\/UserByScreenName\?/.test(url)
 		if (test) {
@@ -253,14 +252,22 @@ const searchAccount = async () => {
 			
 			if (ret?.data?.user?.result) {
 				const result:twitterUser_content_itemContent_user_results_result = ret.data.user.result
+				
 				const legacy = result.legacy
-				task.result = legacy.followed_by
-				await callbackTwitter(task)
+				if (legacy.screen_name.toLowerCase() === task.checkAccount.toLowerCase()) {
+					task.result = legacy.followed_by
+					await callbackTwitter(task)
+				}
 			}
 			pageLocked = false
+			if (page) {
+				page.removeAllListeners('response')
+			}
+			
 			return searchAccount()
 		}
-	})
+	}
+	page.on ('response', listen)
 
 	logger(Colors.blue(`searchAccount checkAccount ${task.checkAccount}`))
 	return await page.goto(`https://x.com/${task.checkAccount}`)
