@@ -8,7 +8,74 @@ import {inspect} from 'node:util'
 import {request as requestHttps, RequestOptions} from 'node:https'
 import Phin from 'phin'
 
-interface witterUser_content_itemContent_user_results_result_legacy {
+
+const tweet = '1826732383296422252'
+
+interface tweeted_status_result {
+	core: {
+		user_results: {
+			result: twitterUser_content_itemContent_user_results_result
+		}
+	}
+	edit_control: {
+		edit_tweet_ids: string[]												//		['1834792666871013683']
+		editable_until_msecs: string											//		1726287235238
+		edits_remaining: number													//		5
+		is_edit_eligible: boolean												//		false
+	}
+	is_translatable: boolean
+	legacy: twitterTimev2_content_legacy
+	quick_promote_eligibility: {
+		eligibility: string
+	}
+	rest_id: string																//	1834792666871013683
+	source: string																//	<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>
+	unmention_data: {}
+	views: {
+		state: 'Enabled'
+	}
+}
+interface twitterTimev2_content_legacy {
+	retweeted_status_result: {
+		result: tweeted_status_result
+	}
+	bookmark_count: number																	//		0
+	bookmarked: boolean
+	rest_id: string																			//
+
+}
+
+interface twitterTimev2_content {
+	clientEventInfo: {
+		component: 'tweet'
+		details: {
+			timelinesDetails:{
+				controllerData: {
+					controllerData: string
+					injectionType: string
+				}
+			}
+		}
+		element: 'tweet'
+	}
+	entryType: 'TimelineTimelineItem'
+	itemContent: {
+		itemType: 'TimelineTweet'
+		tweetDisplayType: 'Tweet'
+		tweet_results: {
+			result: tweeted_status_result
+		}
+	}
+}
+
+
+interface twitterTimev2_contents {
+	content: twitterTimev2_content															//		
+	entryId: string																			//	tweet-1834792666871013683
+	sortIndex: string																		//	1834792737430306815
+}	
+
+interface twitterUser_content_itemContent_user_results_result_legacy {
 	can_dm: boolean															//		true																								true
 	can_media_tag: boolean													//		true																								true				
 	created_at: string														//		"Mon Oct 04 10:04:46 +0000 2021"																	Sat May 08 01:55:14 +0000 2021
@@ -58,7 +125,7 @@ interface twitterUser_content_itemContent_user_results_result {
 	has_graduated_access: boolean											//	true
 	id: string																//
 	is_blue_verified: boolean												//	false																blue_verified
-	legacy: witterUser_content_itemContent_user_results_result_legacy
+	legacy: twitterUser_content_itemContent_user_results_result_legacy
 	profile_image_shape: string												//	"Circle"
 	rest_id: string															//	1444966599656607751																					1390847459824263169
 	tipjar_settings: {														//	{}
@@ -94,7 +161,11 @@ interface account {
 interface taskPoolObj {
 	checkAccount: string
 	uuid: string
-	result: boolean
+	result: {
+		status: number,
+		isFollow: boolean
+		isRetweet: boolean
+	}
 	walletAddress: string
 }
 
@@ -213,8 +284,6 @@ const listenAPIServer = async () => {
 }
 
 
-
-
 const callbackTwitter = async (obj: taskPoolObj) => {
 
 	logger(Colors.blue(`callbackTwitter to API`))
@@ -241,32 +310,76 @@ const searchAccount = async () => {
 	if (!task) {
 		return logger(Colors.gray(`postPool has empty!`))
 	}
-	
 	pageLocked = true
+
+	task.result = {
+		status: 200,
+		isFollow: false,
+		isRetweet: false
+	}
+
+
+	const _Timeout = setTimeout(async () => {
+		
+		logger(Colors.red(`_Timeout Error! response Error!`))
+		task.result.status = 500
+		await callbackTwitter(task)
+		pageLocked = false
+		return searchAccount()
+
+	}, 1000*60 * 3)
+
 	const listen = async (response: HTTPResponse) => {
 		const url = response.url()
-		const test = /\/UserByScreenName\?/.test(url)
+		const test = /\/UserTweets\?/.test (url)
+		
+
 		if (test) {
-			logger(Colors.grey(`loading ${response.url()}`))
+			
 			const ret = await response.json()
 			
-			if (ret?.data?.user?.result) {
-				const result:twitterUser_content_itemContent_user_results_result = ret.data.user.result
-				
-				const legacy = result.legacy
-				if (legacy.screen_name.toLowerCase() === task.checkAccount.toLowerCase()) {
-					task.result = legacy.followed_by
-					await callbackTwitter(task)
+			if (ret?.data?.user?.result?.timeline_v2?.timeline?.instructions?.length) {
+
+				logger(Colors.grey(`loading ${response.url()}`))
+				clearTimeout(_Timeout)
+				const _results = ret.data.user.result.timeline_v2.timeline.instructions[2]||ret.data.user.result.timeline_v2.timeline.instructions[1]
+				if (_results?.entries?.length>0) {
+					
+					const results: twitterTimev2_contents[] = _results.entries
+					
+					if (results[0]?.content?.itemContent?.tweet_results?.result?.core?.user_results?.result?.legacy) {
+						const legacy: twitterUser_content_itemContent_user_results_result_legacy = results[0].content.itemContent.tweet_results.result.core.user_results.result.legacy
+						if (legacy?.followed_by === true) {
+							task.result.isFollow = true
+						}
+						
+					}
+					
+
+
+					const inedx = results.findIndex(n => n.content.itemContent?.tweet_results?.result?.legacy?.retweeted_status_result?.result.rest_id === tweet)
+					if (inedx > -1) {
+						task.result.isRetweet = true
+					}
 				}
+
+				
 			}
-			pageLocked = false
 			if (page) {
 				page.removeAllListeners('response')
 			}
 			
+			
+			await callbackTwitter(task)
+
+			pageLocked = false
 			return searchAccount()
 		}
+		
 	}
+
+
+
 	page.on ('response', listen)
 
 	logger(Colors.blue(`searchAccount checkAccount ${task.checkAccount}`))
@@ -274,6 +387,7 @@ const searchAccount = async () => {
 }
 
 let pinnedHrl = ''
+
 const startTwitter = async (username: string, passwd: string) => new Promise(async resolve => {
 	browser = await puppeteer.launch({devtools: true, headless: false})
 	page = await browser.newPage()
@@ -290,7 +404,7 @@ const startTwitter = async (username: string, passwd: string) => new Promise(asy
 				if (page) {
 					page.removeAllListeners('response')
 				}
-				const data: witterUser_content_itemContent_user_results_result_legacy = ret.data.user.result.legacy
+				const data: twitterUser_content_itemContent_user_results_result_legacy = ret.data.user.result.legacy
 
 				if (data.pinned_tweet_ids_str?.length) {
 					pinnedHrl = `https://x.com/${username}/status/${data.pinned_tweet_ids_str[0]}`
