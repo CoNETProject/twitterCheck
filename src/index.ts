@@ -34,7 +34,7 @@ interface witterUser_content_itemContent_user_results_result_legacy {
 	media_count: number														//		16																									59			***********************************
 	name: string															//		"Rico Aissat"																						"DDD"		***********************************		USER NAME showing Big
 	normal_followers_count: number											//		126																									507			************************************		126 Followers
-	pinned_tweet_ids_str: any[]												//		[]
+	pinned_tweet_ids_str: string[]											//		['1826732383296422252']
 	possibly_sensitive: boolean												//		false																								false
 	profile_banner_url: string												//																											"https://pbs.twimg.com/profile_banners/1390847459824263169/1706808045"
 	profile_image_url_https: string											//		"https://pbs.twimg.com/profile_images/1609831996708061184/dIXnZnC9_normal.jpg"						"https://pbs.twimg.com/profile_images/1753106073526177792/iTzCKF_1_normal.jpg"
@@ -273,31 +273,31 @@ const searchAccount = async () => {
 	return await page.goto(`https://x.com/${task.checkAccount}`)
 }
 
+let pinnedHrl = ''
 const startTwitter = async (username: string, passwd: string) => new Promise(async resolve => {
 	browser = await puppeteer.launch({devtools: true, headless: false})
 	page = await browser.newPage()
 	await page.setViewport({width: 1080, height: 1400})
 
-	// page.on('response', async response => {
-	// 	const url = response.url()
-	// 	const test = /\/Followers\?/.test(url)
-	// 	if (test) {
-	// 		logger(Colors.grey(`loading ${response.url()}`))
-	// 		const ret = await response.json()
-	// 		if (ret?.data?.user?.result?.timeline?.timeline?.instructions) {
-	// 			const data: any [] = ret.data.user.result.timeline.timeline.instructions
-	// 			if (data.length === 3) {
-	// 				if (data[2]?.entries) {
-	// 					users = data[2].entries
-	// 					if (page) {
 
-	// 					}
-	// 				}
-					
-	// 			}
-	// 		}
-	// 	}
-	// })
+	page.on('response', async response => {
+		const url = response.url()
+		const test = /\/UserByScreenName\?/.test(url)
+		if (test) {
+			logger(Colors.grey(`loading ${response.url()}`))
+			const ret = await response.json()
+			if (ret?.data?.user?.result?.legacy) {
+				if (page) {
+					page.removeAllListeners('response')
+				}
+				const data: witterUser_content_itemContent_user_results_result_legacy = ret.data.user.result.legacy
+
+				if (data.pinned_tweet_ids_str?.length) {
+					pinnedHrl = `https://x.com/${username}/status/${data.pinned_tweet_ids_str[0]}`
+				}
+			}
+		}
+	})
 
 
 	page.waitForSelector(`input[autocapitalize='sentences']`).then (async element => {
