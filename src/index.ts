@@ -268,7 +268,11 @@ const listenAPIServer = async () => {
 				const taskPoolObj: taskPoolObj = {
 					checkAccount: kk.data[0],
 					uuid: kk.uuid,
-					result: false,
+					result: {
+						isFollow: false,
+						isRetweet: false,
+						status: 200
+					},
 					walletAddress: kk.walletAddress
 				}
 				postPool.push(taskPoolObj)
@@ -312,15 +316,8 @@ const searchAccount = async () => {
 	}
 	pageLocked = true
 
-	task.result = {
-		status: 200,
-		isFollow: false,
-		isRetweet: false
-	}
-
-
 	const _Timeout = setTimeout(async () => {
-		
+
 		logger(Colors.red(`_Timeout Error! response Error!`))
 		task.result.status = 500
 		await callbackTwitter(task)
