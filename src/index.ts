@@ -329,7 +329,7 @@ const searchAccount = async () => {
 	const listen = async (response: HTTPResponse) => {
 		const url = response.url()
 		const test = /\/UserTweets\?/.test (url)
-		
+		const test1 = /\/UserByScreenName\?/.test(url)
 
 		if (test) {
 			
@@ -371,6 +371,22 @@ const searchAccount = async () => {
 
 			pageLocked = false
 			return searchAccount()
+		}
+		
+		if (test1) {
+			const ret = await response.json()
+			if (!ret?.data) {
+				if (page) {
+					page.removeAllListeners('response')
+				}
+				task.result.status=404
+				await callbackTwitter(task)
+
+				pageLocked = false
+				return searchAccount()
+			}
+			
+			
 		}
 		
 	}
