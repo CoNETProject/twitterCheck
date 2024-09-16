@@ -334,7 +334,7 @@ const searchAccount = async () => {
 			
 			const ret = await response.json()
 			
-			if (ret?.data?.user?.result?.timeline_v2?.timeline?.instructions?.length) {
+			if (ret?.data?.user?.result?.timeline_v2?.timeline?.instructions) {
 
 				logger(Colors.grey(`loading ${response.url()}`))
 				clearTimeout(_Timeout)
@@ -358,7 +358,6 @@ const searchAccount = async () => {
 						task.result.isRetweet = true
 					}
 				}
-
 				
 			}
 			if (page) {
@@ -374,12 +373,12 @@ const searchAccount = async () => {
 
 		if (test1) {
 			const ret = await response.json()
-			if (!ret?.data) {
+			if (!ret?.data?.user) {
 				if (page) {
 					page.removeAllListeners('response')
 				}
 				task.result.status=404
-				
+
 				if (page) {
 					page.removeAllListeners('response')
 				}
