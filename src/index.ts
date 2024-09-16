@@ -68,7 +68,6 @@ interface twitterTimev2_content {
 	}
 }
 
-
 interface twitterTimev2_contents {
 	content: twitterTimev2_content															//		
 	entryId: string																			//	tweet-1834792666871013683
@@ -372,7 +371,7 @@ const searchAccount = async () => {
 			pageLocked = false
 			return searchAccount()
 		}
-		
+
 		if (test1) {
 			const ret = await response.json()
 			if (!ret?.data) {
@@ -380,6 +379,11 @@ const searchAccount = async () => {
 					page.removeAllListeners('response')
 				}
 				task.result.status=404
+				
+				if (page) {
+					page.removeAllListeners('response')
+				}
+
 				await callbackTwitter(task)
 
 				pageLocked = false
