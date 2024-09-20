@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs'
 import {join} from 'node:path'
 import {ethers, Wallet} from 'ethers'
 import {inspect} from 'node:util'
+import type {IncomingMessage} from 'node:http'
 import {request as requestHttps, RequestOptions} from 'node:https'
 import Phin from 'phin'
 
@@ -18,7 +19,7 @@ const postPool: taskPoolObj[] = []
 
 const startGossip = (url: string, POST: string, callback: (err?: string, data?: string) => void) => {
 	const Url = new URL(url)
-
+	let res: IncomingMessage|null = null
 	const option: RequestOptions = {
 		hostname: Url.hostname,
 		port: 443,
@@ -68,9 +69,8 @@ const startGossip = (url: string, POST: string, callback: (err?: string, data?: 
 		})
 
 		res.once('end', () => {
-			kkk.destroy()
-			logger(Colors.red(`startGossip [${url}] res on END! Try to restart! `))
-			return startGossip (url, POST, callback)
+			res.destroy()
+			logger(Colors.red(`res on end! destroy res!`))
 		})
 		
 	})
@@ -82,7 +82,10 @@ const startGossip = (url: string, POST: string, callback: (err?: string, data?: 
 	// })
 
 	kkk.end(POST)
-
+	kkk.once ('error', err => {
+		logger(`startGossip requestHttps on Error! restart again!`)
+		startGossip ()
+	})
 }
 
 const listenAPIServer = async () => {
@@ -102,7 +105,7 @@ const listenAPIServer = async () => {
 		}
 		logger(Colors.blue(`listenAPIServer got message from API`), data)
 		if (data) {
-			data = data.replace('\r\n', '')
+			data = data.replaceAll(/\r\n/g, '')
 			try {
 				const kk = JSON.parse(data)
 				const taskPoolObj: taskPoolObj = {
@@ -118,7 +121,8 @@ const listenAPIServer = async () => {
 				postPool.push(taskPoolObj)
 				
 			} catch (ex) {
-				return logger(Colors.magenta(`startGossip got format error data from API`))
+				logger(inspect(data, false, 3, true))
+				return logger(Colors.magenta(`startGossip got JSON error data from API `))
 			}
 
 			return searchAccount()
