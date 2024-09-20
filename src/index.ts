@@ -222,13 +222,16 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 					result = {
 						protected: true,
 						status: 200,
-						isFollow: false
+						message: `User profile may not be readable because it was protected!`
 					}
 					
 				}
 				result.isFollow = userdata.legacy.followed_by
 			} else {
-				result.status=404
+				result = {
+					status: 404,
+					message: 'User has not exist!'
+				}
 			}
 			
 		}

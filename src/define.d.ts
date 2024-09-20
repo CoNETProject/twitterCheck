@@ -149,9 +149,10 @@ interface account {
 
 interface twitter_result {
 	status: number,
-	isFollow: boolean
+	isFollow?: boolean
 	isRetweet?: boolean
 	protected?: boolean
+	message?: string
 }
 
 interface taskPoolObj {
