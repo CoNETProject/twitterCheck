@@ -154,7 +154,7 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 		status: 501
 	}
 
-	if (!page|| pageLocked) {
+	if (!page) {
 		return resolve(result)
 	}
 
@@ -232,9 +232,6 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 
 
 const searchAccount = async () => {
-	if (!page|| pageLocked) {
-		return
-	}
 
 	const task = postPool.shift()
 	if (!task) {

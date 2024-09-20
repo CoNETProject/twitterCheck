@@ -160,3 +160,20 @@ interface taskPoolObj {
 	result: twitter_result
 	walletAddress: string
 }
+
+interface minerObj {
+	walletAddress: string
+	walletAddress1?:string
+	ipAddress?: string
+	weidth?: number
+	blockNumber?:string
+	referrer?:string
+	fork?: any
+	hash?: string
+	data?: any
+	allWallets?: string[]
+	bio?: string
+	uuid?: string
+	serverIPAddress?: string
+	result?: twitterResult
+}
