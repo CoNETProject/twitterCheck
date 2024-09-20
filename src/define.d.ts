@@ -150,7 +150,7 @@ interface account {
 interface twitter_result {
 	status: number,
 	isFollow: boolean
-	isRetweet: boolean
+	isRetweet?: boolean
 	protected?: boolean
 }
 

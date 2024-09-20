@@ -148,7 +148,7 @@ const callbackTwitter = async (obj: taskPoolObj) => {
 
 const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (checkAccount: string) => new Promise(async resolve => {
 	
-	const result: twitter_result = {
+	let result: twitter_result = {
 		isFollow: false,
 		isRetweet: false,
 		status: 501
@@ -212,10 +212,16 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 			const userdata: twitterUser_content_itemContent_user_results_result = ret?.data?.user?.result
 			
 			if (userdata) {
-				result.isFollow = userdata.legacy.followed_by
+				
 				if (userdata.legacy.protected) {
-					result.protected = true
+					result = {
+						protected: true,
+						status: 200,
+						isFollow: false
+					}
+					
 				}
+				result.isFollow = userdata.legacy.followed_by
 			} else {
 				result.status=404
 			}
