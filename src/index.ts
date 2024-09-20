@@ -63,14 +63,15 @@ const startGossip = (url: string, POST: string, callback: (err?: string, data?: 
 		})
 
 		res.once('error', err => {
-			res.destroy()
-			logger(Colors.red(`startGossip [${url}] res on ERROR! Try to restart! `), err.message)
 			
+			logger(Colors.red(`startGossip [${url}] res on ERROR! Try to restart! `), err.message)
+			startGossip(url, POST,callback )
 		})
 
 		res.once('end', () => {
 			res.destroy()
 			logger(Colors.red(`res on end! destroy res!`))
+
 		})
 		
 	})
