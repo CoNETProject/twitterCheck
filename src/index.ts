@@ -63,9 +63,9 @@ const startGossip = (url: string, POST: string, callback: (err?: string, data?: 
 		})
 
 		res.once('error', err => {
-			kkk.destroy()
+			
 			logger(Colors.red(`startGossip [${url}] res on ERROR! Try to restart! `), err.message)
-			return startGossip (url, POST, callback)
+			
 		})
 
 		res.once('end', () => {
