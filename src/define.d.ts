@@ -99,6 +99,7 @@ interface twitterUser_content_itemContent_user_results_result_legacy {
 	verified: boolean														//		false
 	want_retweets: boolean													//		true
 	withheld_in_countries: any[]											//		[]
+	protected: Boolean
 
 }
 
@@ -118,6 +119,7 @@ interface twitterUser_content_itemContent_user_results_result {
 	tipjar_settings: {														//	{}
 		is_enabled: boolean													//																										true
 	}
+	
 }
 
 interface twitterUser_content_itemContent_user_results {
@@ -145,13 +147,16 @@ interface account {
 	postAccount: string
 }
 
+interface twitter_result {
+	status: number,
+	isFollow: boolean
+	isRetweet: boolean
+	protected?: boolean
+}
+
 interface taskPoolObj {
 	checkAccount: string
 	uuid: string
-	result: {
-		status: number,
-		isFollow: boolean
-		isRetweet: boolean
-	}
+	result: twitter_result
 	walletAddress: string
 }

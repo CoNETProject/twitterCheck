@@ -145,27 +145,25 @@ const callbackTwitter = async (obj: taskPoolObj) => {
 	logger(req.body.toJSON())
 }
 
-const searchAccount = async () => {
-	if (!page|| pageLocked) {
-		return
+
+const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (checkAccount: string) => new Promise(async resolve => {
+	
+	const result: twitter_result = {
+		isFollow: false,
+		isRetweet: false,
+		status: 501
 	}
 
-	const task = postPool.shift()
-	if (!task) {
-		return logger(Colors.gray(`postPool has empty!`))
+	if (!page|| pageLocked) {
+		return resolve(result)
 	}
-	pageLocked = true
 
 	const _Timeout = setTimeout(async () => {
-
 		logger(Colors.red(`_Timeout Error! response Error!`))
-		task.result.status = 500
-		await callbackTwitter(task)
-		pageLocked = false
-		return searchAccount()
+		return resolve(result)
+	}, 1000 * 5)
 
-	}, 1000*60 * 3)
-
+	result.status = 200
 	const listen = async (response: HTTPResponse) => {
 		const url = response.url()
 		const test = /\/UserTweets\?/.test (url)
@@ -174,7 +172,7 @@ const searchAccount = async () => {
 		if (test) {
 			
 			const ret = await response.json()
-			
+			clearTimeout(_Timeout)
 			if (ret?.data?.user?.result?.timeline_v2?.timeline?.instructions) {
 
 				logger(Colors.grey(`loading ${response.url()}`))
@@ -187,16 +185,14 @@ const searchAccount = async () => {
 					if (results[0]?.content?.itemContent?.tweet_results?.result?.core?.user_results?.result?.legacy) {
 						const legacy: twitterUser_content_itemContent_user_results_result_legacy = results[0].content.itemContent.tweet_results.result.core.user_results.result.legacy
 						if (legacy?.followed_by === true) {
-							task.result.isFollow = true
+							result.isFollow = true
 						}
 						
 					}
-					
-
 
 					const inedx = results.findIndex(n => n.content.itemContent?.tweet_results?.result?.legacy?.retweeted_status_result?.result.rest_id === pinnedHrl)
 					if (inedx > -1) {
-						task.result.isRetweet = true
+						result.isRetweet = true
 					}
 				}
 				
@@ -205,42 +201,50 @@ const searchAccount = async () => {
 				page.removeAllListeners('response')
 			}
 			
-			
-			await callbackTwitter(task)
-
-			pageLocked = false
-			return searchAccount()
+			return resolve(result)
+		
 		}
 
 		if (test1) {
-			const ret = await response.json()
-			if (!ret?.data?.user) {
-				if (page) {
-					page.removeAllListeners('response')
-				}
-				task.result.status=404
-
-				if (page) {
-					page.removeAllListeners('response')
-				}
-
-				await callbackTwitter(task)
-
-				pageLocked = false
-				return searchAccount()
-			}
+			logger(Colors.grey(`loading UserByScreenName!`))
 			
+			const ret = await response.json()
+			const userdata: twitterUser_content_itemContent_user_results_result = ret?.data?.user?.result
+			
+			if (userdata) {
+				result.isFollow = userdata.legacy.followed_by
+				if (userdata.legacy.protected) {
+					result.protected = true
+				}
+			} else {
+				result.status=404
+			}
 			
 		}
 		
 	}
 
-
-
 	page.on ('response', listen)
 
-	logger(Colors.blue(`searchAccount checkAccount ${task.checkAccount}`))
-	return await page.goto(`https://x.com/${task.checkAccount}`)
+	logger(Colors.blue(`searchAccount checkAccount ${checkAccount}`))
+	return await page.goto(`https://x.com/${checkAccount}`)
+})
+
+
+const searchAccount = async () => {
+	if (!page|| pageLocked) {
+		return
+	}
+
+	const task = postPool.shift()
+	if (!task) {
+		return logger(Colors.gray(`postPool has empty!`))
+	}
+	pageLocked = true
+	task.result = await _searchAccount (task.checkAccount)
+	await callbackTwitter (task)
+	pageLocked = false
+	searchAccount()
 }
 
 let pinnedHrl = ''
@@ -255,7 +259,7 @@ const startTwitter = async (username: string, passwd: string) => new Promise(asy
 		const url = response.url()
 		const test = /\/UserByScreenName\?/.test(url)
 		if (test) {
-			logger(Colors.grey(`loading ${response.url()}`))
+			logger(Colors.grey(`loading main user ${username} UserByScreenName`))
 			const ret = await response.json()
 			if (ret?.data?.user?.result?.legacy) {
 				if (page) {
@@ -264,7 +268,7 @@ const startTwitter = async (username: string, passwd: string) => new Promise(asy
 				const data: twitterUser_content_itemContent_user_results_result_legacy = ret.data.user.result.legacy
 
 				if (data.pinned_tweet_ids_str?.length) {
-					pinnedHrl = `https://x.com/${username}/status/${data.pinned_tweet_ids_str[0]}`
+					pinnedHrl = data.pinned_tweet_ids_str[0]
 				}
 			}
 		}
@@ -355,13 +359,11 @@ const startTwitter = async (username: string, passwd: string) => new Promise(asy
 	return await page.goto('https://x.com/i/flow/login')
 })
 
-
 const start = async () => {
 	const filePath = join(__dirname,'.twitter.json')
 	logger(Colors.magenta(`filePath ${filePath}`))
 	const kk = readFileSync(filePath,'utf-8')
 	const account: account = JSON.parse(kk)
-
 	await startTwitter(account.account, account.passwd)
 	wallet = new ethers.Wallet(account.postAccount)
 	listenAPIServer()
