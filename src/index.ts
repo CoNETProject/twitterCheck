@@ -82,9 +82,10 @@ const startGossip = (url: string, POST: string, callback: (err?: string, data?: 
 	// })
 
 	kkk.end(POST)
+
 	kkk.once ('error', err => {
-		logger(`startGossip requestHttps on Error! restart again!`)
-		startGossip ()
+		logger(`startGossip requestHttps on Error! restart again! ${err.message}`)
+		return startGossip (url, POST, callback)
 	})
 }
 
