@@ -56,6 +56,7 @@ const startGossip = (url: string, POST: string, callback: (err?: string, data?: 
 				if (first) {
 					first = false
 				}
+				
 				callback ('', data)
 				data = ''
 				
