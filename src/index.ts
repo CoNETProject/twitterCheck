@@ -220,7 +220,7 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 			
 			if (userdata) {
 				
-				if (userdata.legacy.protected) {
+				if (userdata?.legacy?.protected) {
 					result = {
 						protected: true,
 						status: 200,
