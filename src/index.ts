@@ -228,7 +228,10 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 					}
 					
 				}
-				result.isFollow = userdata.legacy.followed_by
+				
+				result.isFollow = userdata?.legacy?.followed_by
+				
+				
 			} else {
 				result = {
 					status: 404,
