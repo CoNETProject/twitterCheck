@@ -117,7 +117,8 @@ const listenAPIServer = async () => {
 					result: {
 						isFollow: false,
 						isRetweet: false,
-						status: 200
+						status: 200,
+						account:  kk.data[0]
 					},
 					walletAddress: kk.walletAddress
 				}
@@ -225,7 +226,8 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 					result = {
 						protected: true,
 						status: 200,
-						message: `User profile may not be readable because it was protected!`
+						message: `User profile may not be readable because it was protected!`,
+						account: checkAccount
 					}
 					
 				}
@@ -236,7 +238,8 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 			} else {
 				result = {
 					status: 404,
-					message: 'User has not exist!'
+					message: 'User has not exist!',
+					account: checkAccount
 				}
 			}
 			
