@@ -154,11 +154,12 @@ const callbackTwitter = async (obj: taskPoolObj) => {
 
 
 const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (checkAccount: string) => new Promise(async resolve => {
-	
+	checkAccount = checkAccount.replace(/^\@/,'')
 	let result: twitter_result = {
 		isFollow: false,
 		isRetweet: false,
-		status: 501
+		status: 501,
+		account: checkAccount
 	}
 
 	if (!page) {

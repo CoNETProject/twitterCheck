@@ -153,6 +153,7 @@ interface twitter_result {
 	isRetweet?: boolean
 	protected?: boolean
 	message?: string
+	account: string
 }
 
 interface taskPoolObj {
