@@ -179,11 +179,12 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 		const test1 = /\/UserByScreenName\?/.test(url)
 
 		if (test) {
-			clearTimeout(_Timeout)
+			
 			let ret
 			try {
 				ret = await response.json()
 			} catch (ex) {
+				clearTimeout(_Timeout)
 				result.status = 501
 				return resolve(result)
 			}
@@ -213,9 +214,11 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 				}
 				
 			}
+
 			if (page) {
 				page.removeAllListeners('response')
 			}
+			
 			return setTimeout(() => {
 				return resolve(result)
 			}, 1000)
@@ -260,6 +263,7 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 
 	logger(Colors.blue(`searchAccount checkAccount ${checkAccount}`))
 	await page.goto(`https://x.com/${checkAccount}`).catch(ex => {
+		clearTimeout(_Timeout)
 		if (page) {
 			page.removeAllListeners('response')
 
