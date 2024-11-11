@@ -170,7 +170,7 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 	const _Timeout = setTimeout(async () => {
 		logger(Colors.red(`_Timeout Error! response Error!`))
 		return resolve(result)
-	}, 1000 * 5)
+	}, 1000 * 10)
 
 	result.status = 200
 	const listen = async (response: HTTPResponse) => {
@@ -179,9 +179,16 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 		const test1 = /\/UserByScreenName\?/.test(url)
 
 		if (test) {
-			
-			const ret = await response.json()
 			clearTimeout(_Timeout)
+			let ret
+			try {
+				ret = await response.json()
+			} catch (ex) {
+				result.status = 501
+				return resolve(result)
+			}
+			
+			
 			if (ret?.data?.user?.result?.timeline_v2?.timeline?.instructions) {
 
 				logger(Colors.grey(`loading ${response.url()}`))
@@ -209,8 +216,10 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 			if (page) {
 				page.removeAllListeners('response')
 			}
+			return setTimeout(() => {
+				return resolve(result)
+			}, 1000)
 			
-			return resolve(result)
 		
 		}
 
@@ -250,7 +259,16 @@ const _searchAccount: (checkAccount: string) => Promise<twitter_result> = (check
 	page.on ('response', listen)
 
 	logger(Colors.blue(`searchAccount checkAccount ${checkAccount}`))
-	return await page.goto(`https://x.com/${checkAccount}`)
+	await page.goto(`https://x.com/${checkAccount}`).catch(ex => {
+		if (page) {
+			page.removeAllListeners('response')
+
+		}
+		setTimeout(() => {
+			return resolve(result)
+		}, 500)
+		
+	})
 })
 
 
