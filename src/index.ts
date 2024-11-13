@@ -18,12 +18,8 @@ const postPool: taskPoolObj[] = []
 
 process.on('uncaughtException', function (err) {
 
-	exec('node dist/index', err1 => {
-		if (err1) {
-			return logger(`uncaughtException restart has Err: ${err1.message}`)
-		}
-		return logger(`uncaughtException restart success!`)
-	})
+	return logger(`uncaughtException restart has Err: ${err.message}\n\n\n`)
+	
 })
 
 const startGossip = (url: string, POST: string, callback: (err?: string, data?: string) => void) => {
