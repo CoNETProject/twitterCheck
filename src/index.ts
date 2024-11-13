@@ -8,7 +8,7 @@ import {inspect} from 'node:util'
 import type {IncomingMessage} from 'node:http'
 import {request as requestHttps, RequestOptions} from 'node:https'
 import Phin from 'phin'
-
+import {exec} from 'node:child_process'
 
 let browser:  Browser
 let page: Page|null = null
@@ -16,6 +16,15 @@ let pageLocked = false
 let wallet: Wallet
 const postPool: taskPoolObj[] = []
 
+process.on('uncaughtException', function (err) {
+
+	exec('node dist/index', err1 => {
+		if (err1) {
+			return logger(`uncaughtException restart has Err: ${err1.message}`)
+		}
+		return logger(`uncaughtException restart success!`)
+	})
+})
 
 const startGossip = (url: string, POST: string, callback: (err?: string, data?: string) => void) => {
 	const Url = new URL(url)
